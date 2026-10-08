@@ -1,226 +1,141 @@
-# Microduck Playground
+# Microduck 篮球任务:蒙眼站球策略的后训练改进
 
-[![CI](https://github.com/Vottivott/microduck-playground/actions/workflows/ci.yml/badge.svg)](https://github.com/Vottivott/microduck-playground/actions/workflows/ci.yml)
+基于 [Vottivott/microduck-playground](https://github.com/Vottivott/microduck-playground)
+(上游 [pollen-robotics/microduck_rl](https://github.com/pollen-robotics/microduck_rl))
+的盲眼篮球平衡任务,对这个策略做的一轮**强化学习后训练**改进实验。
 
-<img src="docs/media/playground.png" align="right" width="320" alt="Watercolor illustration of Microduck pumping on its swing">
+**任务**:机器鸭站在一颗自由滚动的篮球顶上,策略是蒙眼的(61 维输入里
+没有任何球状态),要保平衡并跟踪速度指令。起点为 b11 发布版
+(60 秒存活率 97.01%,转向误差 1.26 rad/s)。
 
-Reproducible reinforcement-learning experiments, policy demonstrations, and
-printable hardware add-ons for
-[Pollen Robotics' Microduck](https://github.com/pollen-robotics/microduck).
+## 修改思路
 
-This is an independent experimental continuation of
-[`pollen-robotics/microduck_rl`](https://github.com/pollen-robotics/microduck_rl),
-not an official Pollen Robotics release. For the initial public release, all
-playground-specific work is consolidated into one commit on top of upstream
-commit [`d424a0c`](https://github.com/pollen-robotics/microduck_rl/commit/d424a0c899f6b33cbd3daeb279913134349c0b63),
-preserving the original project history and attribution. Development after the
-release uses ordinary commits. The upstream project can be added as a Git
-remote when preparing focused contributions.
+### 先诊断,再动手
 
-<br clear="right">
+分析 b11 的 92 次失败记录:掉落与指令内容无关、随时间均匀发生;
+对照实验显示无推扰存活 99.3%、有推扰 87.5%——**失败几乎全部来自推扰**。
+又用一个只训预测头的"热身期"实测:LSTM 隐状态对球状态的预测误差
+≈ 直接猜均值——**基线记忆里几乎不含球的信息**(这是转向不听话的病根)。
 
-## Experiments
+### 三个阶段,两种药方
 
-Animated previews play directly in the table. Click one—or use its explicit
-full-video link—to open the complete silent MP4.
+| 阶段 | 做法 | 属于 | 结果 |
+|---|---|---|---|
+| **0 推扰对齐** | 训练推扰间隔 1.5–3 s → 0.5–1.5 s,对齐考试强度 | 改数据分布 | 存活 97.01% → **98.99%** |
+| **0.5 指令对齐** | 训练指令范围 ×1.5 / ×2,对齐考试指令 | 改数据分布 | 转向仅 1.226 → 1.193,**排除"没练过大指令"假设** |
+| **1 猜球头 + KL 锚** | 训练时逼 LSTM 隐状态预测球状态(标签来自训练时特权可见的 critic 观测),同时用 KL 惩罚把行为锁在源策略附近 | 改优化目标 | 存活 **99.48%**、转向 **1.134**,全面超越基线 |
 
-<table>
-  <thead>
-    <tr>
-      <th>Experiment</th>
-      <th>Preview</th>
-      <th>Result and artifacts</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td><strong>Self-pumped swing</strong></td>
-      <td>
-        <a href="experiments/swing/media/alpha050_seed27.mp4">
-          <img src="experiments/swing/media/preview.gif" width="280" alt="Animated preview of Microduck pumping itself on a swing">
-        </a>
-      </td>
-      <td>
-        Starts still and reaches a 173.20° strict full span.<br>
-        <a href="experiments/swing/media/alpha050_seed27.mp4">Full video</a> ·
-        <a href="experiments/swing/README.md">Experiment</a> ·
-        <a href="integrations/pollen-microduck/README.md">Runtime adapter</a> ·
-        <a href="https://huggingface.co/HannesVonEssen/microduck-swing">ONNX on Hugging Face</a>
-      </td>
-    </tr>
-    <tr>
-      <td><strong>Blind basketball balance</strong></td>
-      <td><a href="experiments/basketball/media/preview.mp4"><img src="experiments/basketball/media/preview.gif" width="280" alt="Microduck balancing and moving on a basketball"></a></td>
-      <td>LSTM policy with no ball-state input: 97.01% survival over 60 seconds in 3,072 simulation trials. Experimental hardware-test candidate; hardware untested.<br>
-      <a href="experiments/basketball/media/preview.mp4">Full video</a> ·
-      <a href="experiments/basketball/README.md">Experiment and training</a> ·
-      <a href="https://huggingface.co/HannesVonEssen/microduck-basketball">ONNX and checkpoint</a> ·
-      <a href="https://github.com/pollen-robotics/microduck/pull/231">LSTM runtime PR</a></td>
-    </tr>
-    <tr>
-      <td><strong>Fast running</strong></td>
-      <td>
-        <a href="experiments/running/media/preview.mp4">
-          <img src="experiments/running/media/preview.gif" width="280" alt="Animated preview of Microduck running on flat ground">
-        </a>
-      </td>
-      <td>
-        Robustified iteration-12,195 simulation candidate: 1.651 m/s nominal,
-        and 1.612 m/s under backlash plus disturbance stress.<br>
-        <a href="experiments/running/media/preview.mp4">Full video</a> ·
-        <a href="experiments/running/README.md">Experiment</a> ·
-        <a href="https://huggingface.co/HannesVonEssen/microduck-running">ONNX on Hugging Face</a>
-      </td>
-    </tr>
-    <tr>
-      <td><strong>Stilt walking</strong></td>
-      <td>
-        <a href="experiments/stilts/media/preview.mp4">
-          <img src="experiments/stilts/media/preview.gif" width="280" alt="Animated preview of Microduck walking on green 10 cm stilts">
-        </a>
-      </td>
-      <td>
-        Blend-0.50 policies for 10, 15, 20, 25, and 50 cm, plus
-        1.0, 1.4, and 2.0 m simulation stilts (10 cm shown).<br>
-        <a href="experiments/stilts/media/preview.mp4">Full video</a> ·
-        <a href="experiments/stilts/README.md">Experiment</a> ·
-        <a href="hardware/stilts/README.md">Hardware</a> ·
-        <a href="https://huggingface.co/HannesVonEssen/microduck-stilts">Policies and videos</a>
-      </td>
-    </tr>
-  <tr>
-    <td><strong>Climbing</strong></td>
-    <td><a href="experiments/desk-climb/media/preview.mp4"><img src="experiments/desk-climb/media/preview.gif" width="280" alt="Cream Microduck climbing a modular ladder onto a desk and standing up"></a></td>
-    <td>Climb, land, recover.<br>
-    <a href="experiments/desk-climb/README.md">Experiment and training</a> · <a href="hardware/ladder/README.md">Ladder and mounts</a> · <a href="https://huggingface.co/HannesVonEssen/microduck-climb">Models</a></td>
-  </tr>
-    <tr>
-      <td><strong>Chimney climbing</strong></td>
-      <td>
-        <a href="experiments/chimney-climb/media/preview.mp4">
-          <img src="experiments/chimney-climb/media/preview.gif" width="280" alt="Animated preview of Microduck entering a narrow corridor, climbing to a platform, exiting and standing up">
-        </a>
-      </td>
-      <td>
-        Braced climbing through a 12.5 cm gap to a 3 m platform.
-        Selected simulation rollout; hardware untested.<br>
-        <a href="experiments/chimney-climb/media/preview.mp4">Full video</a> ·
-        <a href="experiments/chimney-climb/README.md">Experiment and training</a> ·
-        <a href="https://huggingface.co/HannesVonEssen/microduck-chimney-climb">Climb, enter and exit policies</a>
-      </td>
-    </tr>
-    <tr><td><strong>Raised-platform long jump</strong></td><td><a href="experiments/parkour/media/long-jump.mp4"><img src="experiments/parkour/media/long-jump.gif" width="280" alt="Raised-platform long jump in simulation"></a></td><td>Simulation only; not yet validated on hardware.<br><a href="experiments/parkour/long-jump/README.md">Details and reproduction</a> · <a href="https://huggingface.co/HannesVonEssen/microduck-long-jump">Policy and training checkpoint</a></td></tr>
-    <tr><td><strong>Raised-platform backflip</strong></td><td><a href="experiments/parkour/media/backflip-tight-v2.mp4"><img src="experiments/parkour/media/backflip-tight-v2.gif" width="280" alt="Raised-platform backflip in simulation"></a></td><td>Experimental simulation policy; hardware unvalidated. ⚠️ Landings may break the robot.<br><a href="experiments/parkour/backflip/README.md">Details and reproduction</a> · <a href="https://huggingface.co/HannesVonEssen/microduck-backflip">Policy and training checkpoint</a></td></tr>
-  </tbody>
-</table>
+### 关键教训:改目标必须配锚
 
-Previews illustrate simulation behaviors. The jump/backflip excerpts are selected research footage; see their documented fresh-checkpoint verification and original footage provenance limits. Compact machine-readable evaluation records live beside each experiment.
+猜球头的前两版(无锚)直接失败:辅助损失权重 0.5 → 存活崩到 22%;
+降到 0.05 并加热身期 → 仍只有 85.6%。原因:辅助梯度与策略梯度抢同一组
+LSTM 参数,把已精细调优的平衡策略推离了最优。
 
-## Hardware galleries
+第三版加上主流后训练的标准配方——**冻结一份参考策略,每步惩罚
+KL(参考 ‖ 当前)**——同样的猜球压力就变成安全的:存活率不降反升,
+转向、动作平稳度同时改善。一句话总结:
 
-The retained swing seat keeps the battery centered without occupying the
-head-and-leg pumping corridors. It includes compliant locating pads, a padded
-strap, and a removable buckle. The source generators, printable millimetre
-meshes, MuJoCo collision hulls, and clearance reports are under
-[`hardware/swing-seat`](hardware/swing-seat/README.md).
+> **改"练什么"(数据分布)不需要锚;改"优化什么"(目标函数)必须配锚。**
 
-<table>
-  <tr>
-    <td align="center"><img src="hardware/swing-seat/renders/seat_front.png" width="300" alt="Retained swing seat, front view"><br><sub>Front</sub></td>
-    <td align="center"><img src="hardware/swing-seat/renders/seat_three_quarter.png" width="300" alt="Retained swing seat, three-quarter view"><br><sub>Three-quarter</sub></td>
-    <td align="center"><img src="hardware/swing-seat/renders/seat_side.png" width="300" alt="Retained swing seat, side view"><br><sub>Side</sub></td>
-  </tr>
-</table>
+### 最终成绩(3 种子 × 1024 环境 × 60 秒,首次摔倒即失败)
 
-The stilt system replaces the removable soles and preserves explicit tip
-contact geometry. The gallery uses the demonstrated green 10 cm blend-0.50
-configuration. Parametric generators and printable meshes are under
-[`hardware/stilts`](hardware/stilts/README.md).
+| 策略 | 存活率 | 转向误差 rad/s | 动作 RMS |
+|---|---:|---:|---:|
+| b11 发布版 | 97.01% | 1.262 | 0.234 |
+| 阶段 0(推扰对齐) | 98.99% | 1.226 | 0.234 |
+| 猜球头无锚 v2 | 85.6% | 1.177 | 0.256 |
+| **猜球头 + KL 锚(本工作)** | **99.48%** | **1.134** | **0.226** |
+| 参考:能看球的非盲策略 | 99.12% | 0.757 | 0.137 |
 
-<table>
-  <tr>
-    <td align="center"><img src="hardware/stilts/renders/stilts_front.png" width="230" alt="Microduck green stilts, front view"><br><sub>Front</sub></td>
-    <td align="center"><img src="hardware/stilts/renders/stilts_three_quarter.png" width="230" alt="Microduck green stilts, three-quarter view"><br><sub>Three-quarter</sub></td>
-    <td align="center"><img src="hardware/stilts/renders/stilts_side.png" width="230" alt="Microduck green stilts, side view"><br><sub>Side</sub></td>
-    <td align="center"><img src="hardware/stilts/renders/printed_stilt.jpg" width="230" alt="Green 3D-printed Microduck replacement sole and stilt prototype"><br><sub>3D-printed prototype</sub></td>
-  </tr>
-</table>
+新增代码:`src/mjlab_microduck/basketball_belief.py`(算法:
+`BasketballBeliefPPO` = PPO + 猜球辅助头 + KL 锚)、
+`scripts/finetune_basketball_belief.py`(续训入口)、
+`src/mjlab_microduck/video_effects.py`(从上游 desk-climb 快照恢复的渲染依赖)。
 
-The modular climbing ladder has pin-free stacking joints, a central spine, a
-matching floor base and printed tightening screws for the table mounts.
-Printable models, generators, assembly instructions and the full gallery are under
-[`hardware/ladder`](hardware/ladder/README.md).
+## Quick Start
 
-<table>
-  <tr>
-    <td align="center"><img src="hardware/ladder/renders/friction-exploded.png" width="300" alt="Stackable ladder modules and friction-fit joints"><br><sub>Stacking joints</sub></td>
-    <td align="center"><img src="hardware/ladder/renders/friction-floor-assembled.png" width="300" alt="Modular ladder floor base"><br><sub>Floor base</sub></td>
-    <td align="center"><img src="hardware/ladder/renders/friction-top-module.png" width="300" alt="Top module with threaded table mounts"><br><sub>Table mounts</sub></td>
-  </tr>
-</table>
-
-## Quick start
-
-A CUDA GPU and [`uv`](https://docs.astral.sh/uv/) are recommended. Training
-uses MuJoCo Warp through `mjlab`.
+需要 CUDA GPU 和 [uv](https://docs.astral.sh/uv/)。无头服务器建议全程带
+`WANDB_MODE=offline`(日志只写本地)。
 
 ```bash
-git clone https://github.com/Vottivott/microduck-playground
+git clone https://github.com/likaizhen-code/microduck-playground
 cd microduck-playground
 uv sync
 
-# Cheap configuration/training smoke test first.
-uv run train Mjlab-SwingPump-MicroDuck \
-  --env.scene.num-envs 64 \
-  --agent.max-iterations 5
+# 下载 b11 检查点(Hugging Face)
+uv run python - <<'PY'
+from huggingface_hub import snapshot_download
+snapshot_download('HannesVonEssen/microduck-basketball', local_dir='artifacts/basketball')
+PY
 
-# Full swing training configuration.
-uv run train Mjlab-SwingPump-MicroDuck \
-  --env.scene.num-envs 4096
+# CPU 配置测试(不需要 GPU)
+uv run --with pytest pytest tests/
 ```
 
-## Repository layout
-
-```text
-experiments/
-  parkour/               raised-platform long jump and backflip
-  basketball/            blind LSTM policy, evaluation, continuation guide
-  running/               clean policy preview and result summary
-  stilts/                policy index, executed curriculum, continuation guide
-  swing/                 selected checkpoints, evaluation, media, methodology
-hardware/
-  stilts/                parametric stilt generator and printable meshes
-  swing-seat/            retained-seat generator, meshes, clearance reports
-src/mjlab_microduck/     tasks, robot models, actuator model, rewards
-scripts/                 evaluation, export, rendering, and selection tools
-integrations/            policy-specific deployment adapters
-tests/                   CPU configuration and invariant tests
-docs/                    supporting research and training notes
-```
-
-## Scope and safety
-
-These are simulation experiments, not hardware safety certifications. The
-swing model simulates two elastic tension-only cords and randomized actuator
-and sensor dynamics, but real cord knots, frame flex, textile contact, servo
-temperature, and assembly tolerances remain. Extreme-height stilts require an
-engineered load path and fall protection. Use a safety tether, current limits,
-an emergency stop, a clear exclusion zone, and conservative incremental tests.
-
-## Upstream and contributions
-
-To compare against or prepare a focused pull request for Pollen's project:
+### 第一步永远是小试跑(64 环境 × 5 迭代,几分钟)
 
 ```bash
-git remote add upstream https://github.com/pollen-robotics/microduck_rl.git
-git fetch upstream
+WANDB_MODE=offline MICRODUCK_BB_BLIND=1 MICRODUCK_BB_HISTORY=1 \
+uv run python scripts/finetune_basketball.py artifacts/basketball/checkpoint.pt \
+  --run-name smoke --num-envs 64 --iterations 5 \
+  --learning-rate 2e-5 --action-rate-weight -0.2 \
+  --push-interval-s 0.5 1.5 --save-interval 5
 ```
 
-## License
+### 复现阶段 0(推扰加密续训,4096 环境 × 500 迭代 ≈ 12 分钟/RTX4090)
 
-Software is licensed under Apache-2.0; see [`LICENSE`](LICENSE). As in the
-upstream project, 3D hardware design files are licensed under Creative Commons
-Attribution-NonCommercial-ShareAlike 4.0 International; see
-[`LICENSE-HARDWARE`](LICENSE-HARDWARE). Third-party Microduck assets retain
-their original attribution and terms. See [`NOTICE`](NOTICE) and the
-hardware-specific READMEs.
+```bash
+WANDB_MODE=offline MICRODUCK_BB_BLIND=1 MICRODUCK_BB_HISTORY=1 \
+uv run python scripts/finetune_basketball.py artifacts/basketball/checkpoint.pt \
+  --run-name stage0-push-dense --num-envs 4096 --iterations 500 \
+  --learning-rate 2e-5 --action-rate-weight -0.2 --command-scale 1 \
+  --episode-seconds 10 --seed 42 \
+  --push-interval-s 0.5 1.5 --save-interval 125
+```
+
+### 复现阶段 1(猜球头 + KL 锚,从阶段 0 最佳档出发)
+
+```bash
+WANDB_MODE=offline MICRODUCK_BB_BLIND=1 MICRODUCK_BB_HISTORY=1 \
+uv run python scripts/finetune_basketball_belief.py \
+  logs/rsl_rl/basketball/<stage0运行目录>/model_XXXX.pt \
+  --run-name stage1-belief-anchor --num-envs 4096 --iterations 500 \
+  --learning-rate 2e-5 --action-rate-weight -0.2 --command-scale 1.5 \
+  --push-interval-s 0.5 1.5 --save-interval 125 \
+  --belief-weight 0.05 --belief-warmup 100 --anchor-weight 1.0
+# 训练日志逐轮打印 BELIEF_LOSS(猜球误差)与 ANCHOR_KL(离源策略的漂移)
+```
+
+### 导出、对齐、评估、看视频
+
+```bash
+RUN=logs/rsl_rl/basketball/<运行目录>
+
+# 导出 ONNX(归一化器烘焙在内,必须走此路径)
+MICRODUCK_BB_BLIND=1 MICRODUCK_BB_HISTORY=1 \
+uv run python scripts/export.py Mjlab-Basketball-MicroDuck \
+  --checkpoint-file $RUN/model_XXXX.pt --onnx-file out.onnx
+
+# PyTorch/ONNX 数值对齐(误差应 ~1e-6)
+uv run python scripts/verify_basketball_onnx_parity.py $RUN/model_XXXX.pt out.onnx
+
+# 三种子考试(固定协议:60 秒、首次摔倒即失败)
+for SEED in 101 202 303; do
+  uv run python scripts/eval_basketball_long.py $RUN/model_XXXX.pt \
+    eval_seed${SEED}.json --seed $SEED --seconds 60 \
+    --num-envs 1024 --command-scale 2 --blind
+done
+
+# 渲染 30 秒验收视频(无头服务器:MUJOCO_GL=egl)
+MUJOCO_GL=egl uv run python scripts/render_checkpoint.py \
+  --task Mjlab-Basketball-MicroDuck \
+  --checkpoint-file $RUN/model_XXXX.pt \
+  --out-dir video_check --duration-s 30 --seed 0 --follow-entity ball
+```
+
+## 边界声明
+
+- 所有数字均为**仿真内**成绩;未做真机测试(上游对该策略同样如此定位)。
+- 评估协议沿用上游发布版定义(3 种子 × 1024 × 60 s,推扰重置基座水平速度
+  ±0.09 m/s),保证与 b11 基线可比。
+- 许可证与上游一致(Apache-2.0 / 硬件 CC BY-NC-SA 4.0),详见 `LICENSE`、`NOTICE`。
