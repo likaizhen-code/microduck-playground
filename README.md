@@ -1,5 +1,4 @@
 # Microduck 篮球任务:蒙眼站球策略的后训练改进
-/home/likaizhen/microduck-playground/artifacts/basketball/video_beliefv3_8375/v3/rl-video-step-0.mp4
 基于 [Vottivott/microduck-playground](https://github.com/Vottivott/microduck-playground)
 的盲眼篮球平衡任务,对这个策略做的一轮**强化学习后训练**改进实验。
 
