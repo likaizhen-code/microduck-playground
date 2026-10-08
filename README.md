@@ -1,7 +1,8 @@
 # Microduck 篮球任务:蒙眼站球策略的后训练改进
-
+/home/likaizhen/microduck-playground/artifacts/basketball/video_beliefv3_8375/v3/rl-video-step-0.mp4
 基于 [Vottivott/microduck-playground](https://github.com/Vottivott/microduck-playground)
 的盲眼篮球平衡任务,对这个策略做的一轮**强化学习后训练**改进实验。
+
 
 **任务**:机器鸭站在一颗自由滚动的篮球顶上,策略是蒙眼的(61 维输入里
 没有任何球状态),要保平衡并跟踪速度指令。起点为 b11 发布版
@@ -43,7 +44,6 @@ KL(参考 ‖ 当前)**——同样的猜球压力就变成安全的:存活率�
 | 阶段 0(推扰对齐) | 98.99% | 1.226 | 0.234 |
 | 猜球头无锚 v2 | 85.6% | 1.177 | 0.256 |
 | **猜球头 + KL 锚(本工作)** | **99.48%** | **1.134** | **0.226** |
-| 参考:能看球的非盲策略 | 99.12% | 0.757 | 0.137 |
 
 
 ```bash
