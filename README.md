@@ -1,7 +1,6 @@
 # Microduck 篮球任务:蒙眼站球策略的后训练改进
 
 基于 [Vottivott/microduck-playground](https://github.com/Vottivott/microduck-playground)
-(上游 [pollen-robotics/microduck_rl](https://github.com/pollen-robotics/microduck_rl))
 的盲眼篮球平衡任务,对这个策略做的一轮**强化学习后训练**改进实验。
 
 **任务**:机器鸭站在一颗自由滚动的篮球顶上,策略是蒙眼的(61 维输入里
@@ -15,7 +14,7 @@
 分析 b11 的 92 次失败记录:掉落与指令内容无关、随时间均匀发生;
 对照实验显示无推扰存活 99.3%、有推扰 87.5%——**失败几乎全部来自推扰**。
 又用一个只训预测头的"热身期"实测:LSTM 隐状态对球状态的预测误差
-≈ 直接猜均值——**基线记忆里几乎不含球的信息**(这是转向不听话的病根)。
+≈ 直接猜均值——**基线记忆里几乎不含球的信息**。
 
 ### 三个阶段,两种药方
 
@@ -35,7 +34,6 @@ LSTM 参数,把已精细调优的平衡策略推离了最优。
 KL(参考 ‖ 当前)**——同样的猜球压力就变成安全的:存活率不降反升,
 转向、动作平稳度同时改善。一句话总结:
 
-> **改"练什么"(数据分布)不需要锚;改"优化什么"(目标函数)必须配锚。**
 
 ### 最终成绩(3 种子 × 1024 环境 × 60 秒,首次摔倒即失败)
 
@@ -47,15 +45,6 @@ KL(参考 ‖ 当前)**——同样的猜球压力就变成安全的:存活率�
 | **猜球头 + KL 锚(本工作)** | **99.48%** | **1.134** | **0.226** |
 | 参考:能看球的非盲策略 | 99.12% | 0.757 | 0.137 |
 
-新增代码:`src/mjlab_microduck/basketball_belief.py`(算法:
-`BasketballBeliefPPO` = PPO + 猜球辅助头 + KL 锚)、
-`scripts/finetune_basketball_belief.py`(续训入口)、
-`src/mjlab_microduck/video_effects.py`(从上游 desk-climb 快照恢复的渲染依赖)。
-
-## Quick Start
-
-需要 CUDA GPU 和 [uv](https://docs.astral.sh/uv/)。无头服务器建议全程带
-`WANDB_MODE=offline`(日志只写本地)。
 
 ```bash
 git clone https://github.com/likaizhen-code/microduck-playground
@@ -72,26 +61,6 @@ PY
 uv run --with pytest pytest tests/
 ```
 
-### 第一步永远是小试跑(64 环境 × 5 迭代,几分钟)
-
-```bash
-WANDB_MODE=offline MICRODUCK_BB_BLIND=1 MICRODUCK_BB_HISTORY=1 \
-uv run python scripts/finetune_basketball.py artifacts/basketball/checkpoint.pt \
-  --run-name smoke --num-envs 64 --iterations 5 \
-  --learning-rate 2e-5 --action-rate-weight -0.2 \
-  --push-interval-s 0.5 1.5 --save-interval 5
-```
-
-### 复现阶段 0(推扰加密续训,4096 环境 × 500 迭代 ≈ 12 分钟/RTX4090)
-
-```bash
-WANDB_MODE=offline MICRODUCK_BB_BLIND=1 MICRODUCK_BB_HISTORY=1 \
-uv run python scripts/finetune_basketball.py artifacts/basketball/checkpoint.pt \
-  --run-name stage0-push-dense --num-envs 4096 --iterations 500 \
-  --learning-rate 2e-5 --action-rate-weight -0.2 --command-scale 1 \
-  --episode-seconds 10 --seed 42 \
-  --push-interval-s 0.5 1.5 --save-interval 125
-```
 
 ### 复现阶段 1(猜球头 + KL 锚,从阶段 0 最佳档出发)
 
@@ -133,9 +102,4 @@ MUJOCO_GL=egl uv run python scripts/render_checkpoint.py \
   --out-dir video_check --duration-s 30 --seed 0 --follow-entity ball
 ```
 
-## 边界声明
 
-- 所有数字均为**仿真内**成绩;未做真机测试(上游对该策略同样如此定位)。
-- 评估协议沿用上游发布版定义(3 种子 × 1024 × 60 s,推扰重置基座水平速度
-  ±0.09 m/s),保证与 b11 基线可比。
-- 许可证与上游一致(Apache-2.0 / 硬件 CC BY-NC-SA 4.0),详见 `LICENSE`、`NOTICE`。
