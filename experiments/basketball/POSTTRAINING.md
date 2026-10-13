@@ -15,6 +15,7 @@ matched protocol: 3 seeds × 1024 environments × 60 s, first fall = failure,
 | belief v2 `7997` | weight 0.05 + 100-iter head-only warmup | 85.6% | 1.177 | better, still a bad trade |
 | **belief v3 `8375`** | **+ KL anchor to frozen source (µ=1.0)** | **99.48%** | **1.134** | Pareto over every metric; exceeds the sighted b2 reference (99.12%) |
 | belief v3 `8496` | same, full 500 iters | 99.32% | 1.150 | mid checkpoint 8375 selected |
+| belief v4 `8375/8496` | v3 + anchor decay 1.0→0.3 at iter 300 | 99.02% / 98.93% | 1.138 / 1.150 | negative: belief MSE dropped to 0.94 (more ball info) but yaw did not improve — the representation route saturates at v3's level; remaining yaw gap is likely reward-side (track_angular weight 0.5), not information-side |
 
 Warmup-phase measurement (head-only, detached latent): prediction MSE
 plateaus ≈ 2.1 = predicting the mean — the baseline LSTM latent contains

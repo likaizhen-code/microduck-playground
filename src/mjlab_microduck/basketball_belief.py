@@ -50,18 +50,24 @@ class BasketballBeliefPPO(PPO):
         belief_lr: float = 1e-3,
         belief_warmup: int = 100,
         anchor_weight: float = 1.0,
+        anchor_decay_at: int = 0,
+        anchor_decay_to: float | None = None,
         label_obs: str = "critic",
         label_slice: tuple[int, int] = (55, 61),
         **kwargs,
     ):
         if belief_weight < 0 or anchor_weight < 0:
             raise ValueError("belief_weight and anchor_weight must be non-negative")
+        if anchor_decay_at > 0 and (anchor_decay_to is None or anchor_decay_to < 0):
+            raise ValueError("anchor decay requires a non-negative anchor_decay_to")
         super().__init__(actor, critic, storage, **kwargs)
         if not getattr(actor, "is_recurrent", False):
             raise ValueError("BasketballBeliefPPO requires a recurrent actor")
         self.belief_weight = float(belief_weight)
         self.belief_warmup = int(belief_warmup)
         self.anchor_weight = float(anchor_weight)
+        self.anchor_decay_at = int(anchor_decay_at)
+        self.anchor_decay_to = None if anchor_decay_to is None else float(anchor_decay_to)
         self._anchor_actor = None
         self._update_calls = 0
         self._label_obs = label_obs
@@ -72,6 +78,14 @@ class BasketballBeliefPPO(PPO):
             nn.Linear(belief_hidden, label_slice[1] - label_slice[0]),
         ).to(self.device)
         self.belief_optimizer = torch.optim.Adam(self.belief_head.parameters(), lr=belief_lr)
+
+    def _effective_anchor_weight(self) -> float:
+        """Two-level step decay: hold the source policy firmly while the belief
+        representation forms, then loosen so the latent can rewrite deeper
+        (v3 held 1.0 throughout and its belief MSE stalled at 1.35)."""
+        if self.anchor_decay_to is not None and self._update_calls >= self.anchor_decay_at:
+            return self.anchor_decay_to
+        return self.anchor_weight
 
     def _belief_loss(self, batch, detach_latent: bool = False) -> torch.Tensor:
         """MSE between the head(actor latent) and the raw ball-state labels.
@@ -143,7 +157,8 @@ class BasketballBeliefPPO(PPO):
             # KL anchor to the frozen source policy: penalize the current
             # distribution wherever it drops mass the anchor still assigns.
             anchor_kl = None
-            if self._anchor_actor is not None and self.anchor_weight > 0:
+            anchor_w = self._effective_anchor_weight()
+            if self._anchor_actor is not None and anchor_w > 0:
                 with torch.no_grad():
                     # stochastic_output=True only so the distribution gets its
                     # update() call (output_distribution_params requires it);
@@ -205,7 +220,7 @@ class BasketballBeliefPPO(PPO):
             if belief_loss is not None and not warmup:
                 loss = loss + self.belief_weight * belief_loss
             if anchor_kl is not None:
-                loss = loss + self.anchor_weight * anchor_kl
+                loss = loss + anchor_w * anchor_kl
 
             if self.symmetry:
                 if not self.symmetry["use_data_augmentation"]:
@@ -294,7 +309,11 @@ class BasketballBeliefPPO(PPO):
             mean_anchor_kl /= num_anchor_updates
         # One line per update: visible in stdout smoke logs without a wandb UI.
         phase = "warmup" if self._update_calls < self.belief_warmup else "coupled"
-        print(f"BELIEF_LOSS {mean_belief_loss:.6f} ANCHOR_KL {mean_anchor_kl:.6f} phase={phase}", flush=True)
+        print(
+            f"BELIEF_LOSS {mean_belief_loss:.6f} ANCHOR_KL {mean_anchor_kl:.6f} "
+            f"anchor_w={self._effective_anchor_weight():.3g} phase={phase}",
+            flush=True,
+        )
         self._update_calls += 1
 
         self.storage.clear()

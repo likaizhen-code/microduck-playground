@@ -48,6 +48,10 @@ def main():
                    help='head-only iterations before the aux gradient reaches the actor')
     p.add_argument('--anchor-weight', type=float, default=1.0,
                    help='KL(current, frozen source policy) penalty weight; 0 disables')
+    p.add_argument('--anchor-decay-at', type=int, default=0,
+                   help='update call after which the anchor weight decays (0 = never)')
+    p.add_argument('--anchor-decay-to', type=float, default=None,
+                   help='anchor weight after --anchor-decay-at updates')
     a = p.parse_args()
     if min(a.num_envs, a.iterations, a.save_interval) < 1:
         p.error('num-envs, iterations and save-interval must be positive')
@@ -64,6 +68,11 @@ def main():
     agent['algorithm']['belief_lr'] = a.belief_lr
     agent['algorithm']['belief_warmup'] = a.belief_warmup
     agent['algorithm']['anchor_weight'] = a.anchor_weight
+    if a.anchor_decay_at > 0:
+        if a.anchor_decay_to is None:
+            p.error('--anchor-decay-at requires --anchor-decay-to')
+        agent['algorithm']['anchor_decay_at'] = a.anchor_decay_at
+        agent['algorithm']['anchor_decay_to'] = a.anchor_decay_to
     cfg.scene.num_envs = a.num_envs
     agent.update(run_name=a.run_name, max_iterations=a.iterations, save_interval=a.save_interval)
     stamp = datetime.now(timezone.utc).strftime('%Y-%m-%d_%H-%M-%S')

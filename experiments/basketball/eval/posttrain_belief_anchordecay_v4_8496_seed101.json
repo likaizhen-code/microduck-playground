@@ -1,0 +1,336 @@
+{
+  "checkpoint": "logs/rsl_rl/basketball/2026-10-13_12-22-53_basketball-belief-v4-decay/model_8496.pt",
+  "sha256": "1c4ab12394d546e2121f814c6d6e29288b6cea174ebfe726d5a27a7da832405d",
+  "seed": 101,
+  "reset_seed": 10101,
+  "blind": true,
+  "command_scale": 2.0,
+  "num_envs": 1024,
+  "horizon_s": 60.0,
+  "survival": {
+    "10": {
+      "survived": 1023,
+      "fraction": 0.9990234375
+    },
+    "20": {
+      "survived": 1023,
+      "fraction": 0.9990234375
+    },
+    "30": {
+      "survived": 1020,
+      "fraction": 0.99609375
+    },
+    "60": {
+      "survived": 1013,
+      "fraction": 0.9892578125
+    }
+  },
+  "push_velocity_range": {
+    "x": [
+      -0.09,
+      0.09
+    ],
+    "y": [
+      -0.09,
+      0.09
+    ]
+  },
+  "push_interval_s": [
+    0.5,
+    1.0
+  ],
+  "survival_fraction": 0.9892578125,
+  "fell_only_survival_fraction": 0.9892578125,
+  "first_termination_counts": {
+    "time_out": 0,
+    "out_of_terrain_bounds": 0,
+    "nan_state": 0,
+    "fell": 11
+  },
+  "alive_time_weighted_metrics": {
+    "forward_mae_mps": 0.15440937876701355,
+    "lateral_mae_mps": 0.1024138405919075,
+    "yaw_mae_radps": 1.1571147441864014,
+    "tilt_rad": 0.042985137552022934,
+    "offset_m": 0.009054284542798996,
+    "root_above_ball_m": 0.23459438979625702,
+    "ball_speed_mps": 0.11190704256296158,
+    "action_delta_rms": 0.22709237039089203
+  },
+  "per_environment_mean_metrics": {
+    "forward_mae_mps": 0.15442612767219543,
+    "lateral_mae_mps": 0.10259056836366653,
+    "yaw_mae_radps": 1.1588058471679688,
+    "tilt_rad": 0.04304558038711548,
+    "offset_m": 0.009084820747375488,
+    "root_above_ball_m": 0.23458370566368103,
+    "ball_speed_mps": 0.11210884153842926,
+    "action_delta_rms": 0.22732602059841156
+  },
+  "failures": [
+    {
+      "env": 45,
+      "time_s": 35.28,
+      "command": [
+        -0.21821707487106323,
+        0.08762609958648682,
+        0.5822192430496216
+      ],
+      "actual_twist": [
+        0.330142080783844,
+        1.0947637557983398,
+        -0.9052940607070923
+      ],
+      "tilt_rad": 0.1972474306821823,
+      "offset_m": 0.14305350184440613,
+      "root_above_ball_m": 0.1662599742412567,
+      "ball_speed_mps": 0.4700394868850708,
+      "action_delta_rms": 0.08676423132419586,
+      "causes": {
+        "low_height": true,
+        "offset": false,
+        "tilt": false
+      }
+    },
+    {
+      "env": 108,
+      "time_s": 27.12,
+      "command": [
+        -0.2054397165775299,
+        0.08077197521924973,
+        0.8246603012084961
+      ],
+      "actual_twist": [
+        -1.2372910976409912,
+        -0.1613311767578125,
+        2.215686559677124
+      ],
+      "tilt_rad": 0.7245851159095764,
+      "offset_m": 0.12413910031318665,
+      "root_above_ball_m": 0.1566101312637329,
+      "ball_speed_mps": 0.6341278553009033,
+      "action_delta_rms": 0.1495867520570755,
+      "causes": {
+        "low_height": true,
+        "offset": false,
+        "tilt": false
+      }
+    },
+    {
+      "env": 140,
+      "time_s": 50.800000000000004,
+      "command": [
+        0.25324034690856934,
+        0.09936554729938507,
+        -0.873714804649353
+      ],
+      "actual_twist": [
+        0.006420135498046875,
+        0.9308571815490723,
+        -3.1187238693237305
+      ],
+      "tilt_rad": 0.9059042930603027,
+      "offset_m": 0.1738933026790619,
+      "root_above_ball_m": 0.19331106543540955,
+      "ball_speed_mps": 0.1690634787082672,
+      "action_delta_rms": 0.09313888102769852,
+      "causes": {
+        "low_height": false,
+        "offset": true,
+        "tilt": false
+      }
+    },
+    {
+      "env": 184,
+      "time_s": 2.32,
+      "command": [
+        -0.10206545889377594,
+        -0.11031762510538101,
+        0.6918598413467407
+      ],
+      "actual_twist": [
+        1.1794122457504272,
+        0.8265537023544312,
+        1.4818565845489502
+      ],
+      "tilt_rad": 0.6136569976806641,
+      "offset_m": 0.14985011518001556,
+      "root_above_ball_m": 0.15826672315597534,
+      "ball_speed_mps": 0.5058781504631042,
+      "action_delta_rms": 0.16588950157165527,
+      "causes": {
+        "low_height": true,
+        "offset": false,
+        "tilt": false
+      }
+    },
+    {
+      "env": 434,
+      "time_s": 55.800000000000004,
+      "command": [
+        0.0,
+        0.0,
+        -0.8342708349227905
+      ],
+      "actual_twist": [
+        0.7252994775772095,
+        0.7388668656349182,
+        -0.502906858921051
+      ],
+      "tilt_rad": 0.02492212876677513,
+      "offset_m": 0.13396842777729034,
+      "root_above_ball_m": 0.16311930119991302,
+      "ball_speed_mps": 0.4375164806842804,
+      "action_delta_rms": 0.10303473472595215,
+      "causes": {
+        "low_height": true,
+        "offset": false,
+        "tilt": false
+      }
+    },
+    {
+      "env": 451,
+      "time_s": 32.5,
+      "command": [
+        0.181290864944458,
+        -0.17242836952209473,
+        0.8421151638031006
+      ],
+      "actual_twist": [
+        -0.4020029902458191,
+        0.6016506552696228,
+        -4.9950175285339355
+      ],
+      "tilt_rad": 0.18158027529716492,
+      "offset_m": 0.12092466652393341,
+      "root_above_ball_m": 0.16534949839115143,
+      "ball_speed_mps": 0.5532004237174988,
+      "action_delta_rms": 0.10544521361589432,
+      "causes": {
+        "low_height": true,
+        "offset": false,
+        "tilt": false
+      }
+    },
+    {
+      "env": 538,
+      "time_s": 21.56,
+      "command": [
+        -0.1751561462879181,
+        -0.18613073229789734,
+        0.9087988138198853
+      ],
+      "actual_twist": [
+        -0.7725966572761536,
+        0.8849095106124878,
+        2.6569888591766357
+      ],
+      "tilt_rad": 0.15978562831878662,
+      "offset_m": 0.1347620040178299,
+      "root_above_ball_m": 0.1640341579914093,
+      "ball_speed_mps": 0.6206908822059631,
+      "action_delta_rms": 0.18459618091583252,
+      "causes": {
+        "low_height": true,
+        "offset": false,
+        "tilt": false
+      }
+    },
+    {
+      "env": 623,
+      "time_s": 20.02,
+      "command": [
+        0.0,
+        0.0,
+        0.8524216413497925
+      ],
+      "actual_twist": [
+        0.25732308626174927,
+        1.0626466274261475,
+        -1.56143057346344
+      ],
+      "tilt_rad": 0.1508253514766693,
+      "offset_m": 0.1409638375043869,
+      "root_above_ball_m": 0.16173553466796875,
+      "ball_speed_mps": 0.440446674823761,
+      "action_delta_rms": 0.038968171924352646,
+      "causes": {
+        "low_height": true,
+        "offset": false,
+        "tilt": false
+      }
+    },
+    {
+      "env": 690,
+      "time_s": 52.18,
+      "command": [
+        -0.07618339359760284,
+        0.056322600692510605,
+        -0.5596776604652405
+      ],
+      "actual_twist": [
+        -0.07438933849334717,
+        1.0451488494873047,
+        2.6908247470855713
+      ],
+      "tilt_rad": 0.2293717861175537,
+      "offset_m": 0.12620411813259125,
+      "root_above_ball_m": 0.16562935709953308,
+      "ball_speed_mps": 0.6977223753929138,
+      "action_delta_rms": 0.12643279135227203,
+      "causes": {
+        "low_height": true,
+        "offset": false,
+        "tilt": false
+      }
+    },
+    {
+      "env": 840,
+      "time_s": 51.44,
+      "command": [
+        -0.11862420290708542,
+        0.17754726111888885,
+        -0.12165635824203491
+      ],
+      "actual_twist": [
+        0.19171079993247986,
+        1.133764624595642,
+        -1.6146888732910156
+      ],
+      "tilt_rad": 0.5892279744148254,
+      "offset_m": 0.11271116137504578,
+      "root_above_ball_m": 0.15754921734333038,
+      "ball_speed_mps": 0.5060380101203918,
+      "action_delta_rms": 0.15662944316864014,
+      "causes": {
+        "low_height": true,
+        "offset": false,
+        "tilt": false
+      }
+    },
+    {
+      "env": 942,
+      "time_s": 32.660000000000004,
+      "command": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "actual_twist": [
+        0.9043324589729309,
+        0.6224652528762817,
+        -1.1933457851409912
+      ],
+      "tilt_rad": 0.15121203660964966,
+      "offset_m": 0.14589528739452362,
+      "root_above_ball_m": 0.16062110662460327,
+      "ball_speed_mps": 0.3042139708995819,
+      "action_delta_rms": 0.08961841464042664,
+      "causes": {
+        "low_height": true,
+        "offset": false,
+        "tilt": false
+      }
+    }
+  ]
+}
