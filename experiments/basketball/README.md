@@ -132,4 +132,6 @@ uv run python scripts/eval_basketball_long.py PATH/TO/model_XXXX.pt result.json 
 ```
 
 Repeat evaluation with seeds 202 and 303 and inspect a video before selecting a
-replacement. See [TRAINING.md](TRAINING.md) for the experiment lineage.
+replacement. See [TRAINING.md](TRAINING.md) for the experiment lineage, and
+[POSTTRAINING.md](POSTTRAINING.md) for the 2026-10 post-training continuation
+(push-density alignment, anchored belief head).
